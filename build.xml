@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="JSync" default="build-jar" basedir=".">
+
+    <target name="build-jar" depends="do-compile">
+        <jar destfile="build/JSync.jar">
+            <fileset dir="build/classes"></fileset>
+        </jar>
+    	
+    	<jar destfile="build/JSync-src.jar">
+    		<fileset dir="build/src"></fileset>
+    	</jar>
+    </target>
+
+    <target name="do-compile">
+        <delete dir="build/classes" />
+        <delete dir="build/src" />
+        <mkdir dir="build/classes" />
+        <mkdir dir="build/src" />
+        
+        <copy todir="build/src">
+            <fileset dir=".">
+                <include name="src/**" />
+            </fileset>
+        </copy>
+        
+        <javac includeantruntime="false" source="1.8" target="1.8" srcdir="build/src" destdir="build/classes" encoding="UTF-8">
+        </javac>
+    </target>
+    
+</project>
