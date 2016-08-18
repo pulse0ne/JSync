@@ -1,7 +1,7 @@
 # JSync
 JSync is a library for simple and fast directory synchronization. 
 
-It has a JavaFX front-end that can be found at: https://github.com/pulse0ne/JSyncer
+JSync has a JavaFX front-end that can be found [here](https://github.com/pulse0ne/JSyncer).
 
 ## Examples
 Simplest Usage:
