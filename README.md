@@ -1,4 +1,9 @@
 # JSync
+JSync is a library for simple and fast directory synchronization. 
+
+It has a JavaFX front-end that can be found at: https://github.com/pulse0ne/JSyncer
+
+## Examples
 Simplest Usage:
 ```java
 File a = new File("/home/user/src/");
@@ -36,6 +41,11 @@ Total Time : 12345
 ```
 ---
 
+## Building
+Run `ant`
+
+---
+
 ## SyncOptions
 ### deleteUnmatchedTargets
 Default: true 
@@ -49,11 +59,13 @@ Default: true
 
 If this is set to true, the Syncer will compare file size and last modified time, and will only perform a copy if they differ. When this is set to false, a copy is always performed.
 
-## chunkSize
+### chunkSize
 Default: 1024 * 1024 * 16 (16MB)
 
 
 This specifies the copy buffer size. It is HIGHLY recommended that this value be a power of 2 (1024, 2048, 4096...etc).
+
+---
 
 ## Future plans
 - Include/exclude filters
