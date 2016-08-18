@@ -1,6 +1,16 @@
-/**
- * a3c2f7239b19cf7e25ed Header Placeholder
- **/
+/*
+ * Copyright 2016 Tyler Snedigar.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 3 for more details.
+ */
 package com.snedigart.jsync;
 
 import java.io.File;
@@ -16,9 +26,15 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class Syncer {
+/**
+ * The Syncer class provides a convenient and fast way of syncing two
+ * directories
+ * 
+ * @author Tyler Snedigar
+ * @version 1.0
+ */
+public final class Syncer {
 
     private final File source;
 
@@ -28,12 +44,29 @@ public class Syncer {
 
     private static final int TIME_PRECISION = 2000;
 
-    private static final AtomicInteger totalSourceFiles = new AtomicInteger(0);
+    private int totalSourceFiles = 0;
 
-    private static final AtomicInteger remainingSourceFiles = new AtomicInteger(0);
+    private int remainingSourceFiles = 0;
+
+    private int filesDeleted = 0;
+
+    private int filesCopied = 0;
 
     private ProgressCallback callback;
 
+    private SyncResults.SyncResultsBuilder results;
+
+    /**
+     * Constructor. Creates a new Syncer object and initializes it. If options
+     * are null, a set of defaults will be used.
+     * 
+     * @param source
+     *            directory
+     * @param target
+     *            directory
+     * @param options
+     *            sync options
+     */
     public Syncer(File source, File target, SyncOptions options) {
         this.source = source;
         this.target = target;
@@ -44,7 +77,16 @@ public class Syncer {
         }
     }
 
-    public void synchronize(ProgressCallback cb) throws IOException {
+    /**
+     * This method performs the synchronization
+     * 
+     * @param cb
+     *            callback that gets called periodically with progress info
+     * @return results of the sync
+     * @throws IOException
+     *             thrown on IO errors
+     */
+    public SyncResults synchronize(ProgressCallback cb) throws IOException {
         if (cb == null) {
             callback = (c, t, m) -> {
             };
@@ -52,15 +94,23 @@ public class Syncer {
             callback = cb;
         }
 
-        totalSourceFiles.set(0);
-        remainingSourceFiles.set(0);
-        callback.call(remainingSourceFiles.get(), totalSourceFiles.get(), "Loading...");
-        scanSource();
-        remainingSourceFiles.set(totalSourceFiles.get());
-        callback.call(remainingSourceFiles.get(), totalSourceFiles.get(), "Starting synchronize");
+        totalSourceFiles = remainingSourceFiles = filesCopied = filesDeleted = 0;
+        callback.call(remainingSourceFiles, totalSourceFiles, "Loading...");
 
+        long start = System.nanoTime();
+        scanSource();
+        results.filesScanned(totalSourceFiles).scanTimeNanos(System.nanoTime() - start);
+
+        remainingSourceFiles = totalSourceFiles;
+        callback.call(remainingSourceFiles, totalSourceFiles, "Starting synchronize");
         synchronize(source, target);
-        callback.call(remainingSourceFiles.get(), totalSourceFiles.get(), "Done!");
+
+        results.totalTimeNanos(System.nanoTime() - start);
+        callback.call(remainingSourceFiles, totalSourceFiles, "Done!");
+
+        results.filesCopied(filesCopied).filesDeleted(filesDeleted);
+
+        return results.build();
     }
 
     private void synchronize(File s, File t) throws IOException {
@@ -100,18 +150,16 @@ public class Syncer {
                 long sts = s.lastModified() / TIME_PRECISION;
                 long tts = t.lastModified() / TIME_PRECISION;
                 if (!options.isSmartCopy() || sts == 0 || sts != tts || s.length() != t.length()) {
-                    if (remainingSourceFiles.get() > 0) {
-                        callback.call(remainingSourceFiles.getAndDecrement(), totalSourceFiles.get(),
-                                "Copying " + s.getName());
+                    if (remainingSourceFiles > 0) {
+                        callback.call(remainingSourceFiles--, totalSourceFiles, "Copying " + s.getName());
                     }
                     copyFile(s, t);
-                } else if (remainingSourceFiles.get() > 0) {
-                    callback.call(remainingSourceFiles.getAndDecrement(), totalSourceFiles.get(), "");
+                } else if (remainingSourceFiles > 0) {
+                    callback.call(remainingSourceFiles--, totalSourceFiles, "");
                 }
             } else {
-                if (remainingSourceFiles.get() > 0) {
-                    callback.call(remainingSourceFiles.getAndDecrement(), totalSourceFiles.get(),
-                            "Copying " + s.getName());
+                if (remainingSourceFiles > 0) {
+                    callback.call(remainingSourceFiles--, totalSourceFiles, "Copying " + s.getName());
                 }
                 copyFile(s, t);
             }
@@ -137,6 +185,8 @@ public class Syncer {
                 doneBytes += transferred;
                 todoBytes -= transferred;
             }
+
+            filesCopied++;
         }
 
         // TODO: options for syncing time?
@@ -153,6 +203,7 @@ public class Syncer {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 Files.delete(file);
+                filesDeleted++;
                 return FileVisitResult.CONTINUE;
             }
 
@@ -173,29 +224,34 @@ public class Syncer {
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                totalSourceFiles.incrementAndGet();
+                totalSourceFiles++;
                 return FileVisitResult.CONTINUE;
             }
         });
     }
 
+    /**
+     * This functional interface describes a callback that will be called with
+     * progress information.
+     * 
+     * @author Tyler Snedigar
+     * @version 1.0
+     */
     @FunctionalInterface
     public static interface ProgressCallback {
+        /**
+         * The remaining and total values will be 0 when syncing starts
+         * (important to note that calculations will have a divide by zero
+         * error). They will go to -1 if an error occurs, and the message will
+         * explain the error.
+         * 
+         * @param remaining
+         *            files to be processed
+         * @param total
+         *            files being processed
+         * @param message
+         *            the message
+         */
         public void call(int remaining, int total, String message);
-    }
-
-    public static void main(String[] args) {
-        File f1 = new File("/home/tsned/eclipse-workspace/md5test/files");
-        File f2 = new File("/home/tsned/eclipse-workspace/md5test/target");
-
-        try {
-            Syncer syncer = new Syncer(f1, f2, SyncOptions.DEFAULT_OPTIONS);
-            syncer.synchronize((r, t, m) -> {
-                if (t != 0)
-                    System.out.println((((t - r) / t) * 100) + "% " + m);
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }
