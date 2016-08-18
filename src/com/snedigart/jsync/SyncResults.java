@@ -77,6 +77,22 @@ public final class SyncResults {
     }
 
     /**
+     * Returns a textual representation of the results
+     * 
+     * @return string
+     */
+    @Override
+    public String toString() {
+        StringBuilder b = new StringBuilder();
+        b.append("Scanned    : ").append(numFilesScanned).append(System.lineSeparator());
+        b.append("Copied     : ").append(numFilesCopied).append(System.lineSeparator());
+        b.append("Deleted    : ").append(numFilesDeleted).append(System.lineSeparator());
+        b.append("Scan Time  : ").append(scanTimeNanos).append(" ns").append(System.lineSeparator());
+        b.append("Total Time : ").append(totalTimeNanos).append(" ns").append(System.lineSeparator());
+        return b.toString();
+    }
+
+    /**
      * Builder class for SyncResults
      * 
      * @author Tyler Snedigar
