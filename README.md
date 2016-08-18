@@ -59,4 +59,4 @@ This specifies the copy buffer size. It is HIGHLY recommended that this value be
 - Include/exclude filters
 - What to do about symlinks
 - More file comparison options
-- Update last modified timestamp option
+- Option to update last modified timestamp
