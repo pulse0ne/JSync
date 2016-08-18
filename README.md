@@ -34,3 +34,26 @@ Deleted    : 0
 Scan Time  : 1234
 Total Time : 12345
 ```
+---
+
+## SyncOptions
+### deleteUnmatchedTargets
+Default: true 
+
+If this is set to true, the Syncer will delete any files/directories that it encounters in the target directory that don't exist in the source directory.
+
+### smartCopy
+Default: true
+
+If this is set to true, the Syncer will compare file size and last modified time, and will only perform a copy if they differ. When this is set to false, a copy is always performed.
+
+## chunkSize
+Default: 1024 * 1024 * 16 (16MB)
+
+This specifies the copy buffer size. It is HIGHLY recommended that this value be a power of 2 (1024, 2048, 4096...etc).
+
+## Future plans
+- Include/exclude filters
+- What to do about symlinks
+- More file comparison options
+- Update last modified timestamp option
