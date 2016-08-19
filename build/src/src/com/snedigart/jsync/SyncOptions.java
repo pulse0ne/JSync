@@ -13,6 +13,12 @@
  */
 package com.snedigart.jsync;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import com.snedigart.jsync.filter.SyncFilter;
+
 /**
  * The SyncOptions class defines the options that will be used by Syncer.
  * Example use: SyncOptions opts = new
@@ -32,16 +38,28 @@ public final class SyncOptions {
 
     private final long chunkSize;
 
+    private final List<SyncFilter> inclusionFilters;
+
+    private final List<SyncFilter> exclusionFilters;
+
+    private final boolean matchAllInclusionFilters;
+
+    private final boolean matchAllExclusionFilters;
+
     // private for builder pattern
     private SyncOptions(SyncOptionsBuilder builder) {
         this.deleteUnmatchedTargets = builder.deleteUnmatchedTargets;
         this.smartCopy = builder.smartCopy;
         this.chunkSize = builder.chunkSize;
+        this.inclusionFilters = new ArrayList<>(builder.inclusionFilters);
+        this.exclusionFilters = new ArrayList<>(builder.exclusionFilters);
+        this.matchAllInclusionFilters = builder.matchAllInclusionFilters;
+        this.matchAllExclusionFilters = builder.matchAllExclusionFilters;
     }
 
     /**
      * Returns the option of whether or not to delete target files/directories
-     * that do not correspond to a source file/directory
+     * that do not correspond to a source file/directory. Defaults to true.
      * 
      * @return boolean
      */
@@ -50,7 +68,8 @@ public final class SyncOptions {
     }
 
     /**
-     * Returns the option of whether or not smart copy will be used
+     * Returns the option of whether or not smart copy will be used. Defaults to
+     * true.
      * 
      * @return boolean
      */
@@ -59,12 +78,53 @@ public final class SyncOptions {
     }
 
     /**
-     * Returns the buffer size that will be used while copying
+     * Returns the buffer size that will be used while copying. Defaults to
+     * 16MB.
      * 
      * @return long
      */
     public long getChunkSize() {
         return this.chunkSize;
+    }
+
+    /**
+     * Returns an unmodifiable List of the inclusion filters. Defaults to an
+     * empty list.
+     * 
+     * @return List of SyncFilters
+     */
+    public List<SyncFilter> getInclusionFilters() {
+        return Collections.unmodifiableList(this.inclusionFilters);
+    }
+
+    /**
+     * Returns an unmodifiable List of the exclusion filters. Defaults to an
+     * empty list.
+     * 
+     * @return List of SyncFilters
+     */
+    public List<SyncFilter> getExclusionFilters() {
+        return Collections.unmodifiableList(this.exclusionFilters);
+    }
+
+    /**
+     * Returns the flag to match all inclusion filters, or match any inclusion
+     * filter. Defaults to true (must match all inclusion filters).
+     * 
+     * @return boolean
+     */
+    public boolean isMatchAllInclusionFilters() {
+        return this.matchAllInclusionFilters;
+    }
+
+    /**
+     * Returns the flag to match all exclusion filters, or match any exclusion
+     * filter. Defaults to true (must match all exclusion filters).
+     * 
+     * @return boolean
+     */
+    public boolean isMatchAllExclusionFilters() {
+        return this.matchAllExclusionFilters;
     }
 
     /**
@@ -74,11 +134,20 @@ public final class SyncOptions {
      * @version 1.0
      */
     public static class SyncOptionsBuilder {
+
         private boolean deleteUnmatchedTargets = true;
 
         private boolean smartCopy = true;
 
         private long chunkSize = 1024 * 1024 * 16;
+
+        private List<SyncFilter> inclusionFilters = new ArrayList<>();
+
+        private List<SyncFilter> exclusionFilters = new ArrayList<>();
+
+        private boolean matchAllInclusionFilters = true;
+
+        private boolean matchAllExclusionFilters = true;
 
         /**
          * Sets the delete unmatched targets option. The default is true
@@ -118,7 +187,90 @@ public final class SyncOptions {
         }
 
         /**
-         * Builds the SyncOptions object and returns it
+         * Sets the inclusion filters, overwriting any previous list built with
+         * .addInclusionFilter()
+         * 
+         * @param f
+         *            filters
+         * @return SyncOptionsBuilder
+         */
+        public SyncOptionsBuilder setInclusionFilters(List<SyncFilter> f) {
+            if (f != null) {
+                this.inclusionFilters = f;
+            }
+            return this;
+        }
+
+        /**
+         * Adds a new inclusion filter
+         * 
+         * @param f
+         *            filter
+         * @return SyncOptionsBuilder
+         */
+        public SyncOptionsBuilder addInclusionFilter(SyncFilter f) {
+            this.inclusionFilters.add(f);
+            return this;
+        }
+
+        /**
+         * Sets the exclusion filters, overwriting any previous built with
+         * .addExclusionFilter()
+         * 
+         * @param f
+         *            filters
+         * @return SyncOPtionsBuilder
+         */
+        public SyncOptionsBuilder setExclusionFilters(List<SyncFilter> f) {
+            if (f != null) {
+                this.exclusionFilters = f;
+            }
+            return this;
+        }
+
+        /**
+         * Adds a new exclusion filter
+         * 
+         * @param f
+         *            filter
+         * @return SyncOptionsBuilder
+         */
+        public SyncOptionsBuilder addExclusionFilter(SyncFilter f) {
+            this.exclusionFilters.add(f);
+            return this;
+        }
+
+        /**
+         * Sets matchAllInclusionFilters flag. If set to true, the file will be
+         * included only if ALL inclusion filters match. If set to false, the
+         * file will be included if ANY ONE of the inclusion filters match.
+         * 
+         * @param b
+         *            flag
+         * @return SyncOptionsBuilder
+         */
+        public SyncOptionsBuilder matchAllInclusionFilters(boolean b) {
+            this.matchAllInclusionFilters = b;
+            return this;
+        }
+
+        /**
+         * Sets matchAllExclusionsFilters flag. If set to true, the file will be
+         * excluded only if ALL exclusion filters match. If set to false, the
+         * file will be excluded if ANY ONE of the exclusion filters match.
+         * 
+         * @param b
+         *            flag
+         * @return SyncOptionsBuilder
+         */
+        public SyncOptionsBuilder matchAllExclusionFilters(boolean b) {
+            this.matchAllExclusionFilters = b;
+            return this;
+        }
+
+        /**
+         * Builds the SyncOptions object and returns it. Guaranteed to return a
+         * fully built and initialized object (read: no nulls).
          * 
          * @return SyncOptions
          */

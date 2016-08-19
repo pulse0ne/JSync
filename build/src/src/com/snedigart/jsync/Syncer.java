@@ -25,7 +25,10 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import com.snedigart.jsync.filter.SyncFilter;
 
 /**
  * The Syncer class provides a convenient and fast way of syncing two
@@ -51,6 +54,8 @@ public final class Syncer {
     private int filesDeleted = 0;
 
     private int filesCopied = 0;
+
+    private int filesFiltered = 0;
 
     private ProgressCallback callback;
 
@@ -94,7 +99,9 @@ public final class Syncer {
             callback = cb;
         }
 
-        totalSourceFiles = remainingSourceFiles = filesCopied = filesDeleted = 0;
+        results = new SyncResults.SyncResultsBuilder();
+
+        totalSourceFiles = remainingSourceFiles = filesCopied = filesDeleted = filesFiltered = 0;
         callback.call(remainingSourceFiles, totalSourceFiles, "Loading...");
 
         long start = System.nanoTime();
@@ -108,7 +115,7 @@ public final class Syncer {
         results.totalTimeNanos(System.nanoTime() - start);
         callback.call(remainingSourceFiles, totalSourceFiles, "Done!");
 
-        results.filesCopied(filesCopied).filesDeleted(filesDeleted);
+        results.filesCopied(filesCopied).filesDeleted(filesDeleted).filesFiltered(filesFiltered);
 
         return results.build();
     }
@@ -149,7 +156,8 @@ public final class Syncer {
             if (t.exists()) {
                 long sts = s.lastModified() / TIME_PRECISION;
                 long tts = t.lastModified() / TIME_PRECISION;
-                if (!options.isSmartCopy() || sts == 0 || sts != tts || s.length() != t.length()) {
+                boolean filt = checkFilters(s);
+                if (filt && (!options.isSmartCopy() || sts == 0 || sts != tts || s.length() != t.length())) {
                     if (remainingSourceFiles > 0) {
                         callback.call(remainingSourceFiles--, totalSourceFiles, "Copying " + s.getName());
                     }
@@ -158,12 +166,41 @@ public final class Syncer {
                     callback.call(remainingSourceFiles--, totalSourceFiles, "");
                 }
             } else {
-                if (remainingSourceFiles > 0) {
-                    callback.call(remainingSourceFiles--, totalSourceFiles, "Copying " + s.getName());
+                if (checkFilters(s)) {
+                    if (remainingSourceFiles > 0) {
+                        callback.call(remainingSourceFiles--, totalSourceFiles, "Copying " + s.getName());
+                    }
+                    copyFile(s, t);
+                } else {
+                    callback.call(remainingSourceFiles--, totalSourceFiles, "");
                 }
-                copyFile(s, t);
             }
         }
+    }
+
+    private boolean checkFilters(File f) {
+        boolean incl = matchesFilters(f, options.getInclusionFilters(), options.isMatchAllInclusionFilters());
+        if (!incl) {
+            return false;
+        } else {
+            return options.getExclusionFilters().isEmpty()
+                    || !matchesFilters(f, options.getExclusionFilters(), options.isMatchAllExclusionFilters());
+        }
+
+    }
+
+    private boolean matchesFilters(File f, List<SyncFilter> filters, boolean all) {
+        boolean rval = true;
+        for (SyncFilter filter : filters) {
+            if (!filter.matches(f) && all) {
+                return false;
+            } else if (filter.matches(f) && !all) {
+                return true;
+            }
+
+            rval = filter.matches(f);
+        }
+        return rval;
     }
 
     private void copyFile(File s, File t) throws IOException {
@@ -224,7 +261,11 @@ public final class Syncer {
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                totalSourceFiles++;
+                if (checkFilters(file.toFile())) {
+                    totalSourceFiles++;
+                } else {
+                    filesFiltered++;
+                }
                 return FileVisitResult.CONTINUE;
             }
         });

@@ -28,6 +28,8 @@ public final class SyncResults {
 
     private final int numFilesCopied;
 
+    private final int numFilesFiltered;
+
     private final long scanTimeNanos;
 
     private final long totalTimeNanos;
@@ -37,6 +39,7 @@ public final class SyncResults {
         this.numFilesScanned = builder.numFilesScanned;
         this.numFilesDeleted = builder.numFilesDeleted;
         this.numFilesCopied = builder.numFilesCopied;
+        this.numFilesFiltered = builder.numFilesFiltered;
         this.scanTimeNanos = builder.scanTimeNanos;
         this.totalTimeNanos = builder.totalTimeNanos;
     }
@@ -63,6 +66,13 @@ public final class SyncResults {
     }
 
     /**
+     * @return the numFilesFiltered
+     */
+    public int getNumFilesFiltered() {
+        return numFilesFiltered;
+    }
+
+    /**
      * @return the scanTimeNanos
      */
     public long getScanTimeNanos() {
@@ -85,6 +95,7 @@ public final class SyncResults {
     public String toString() {
         StringBuilder b = new StringBuilder();
         b.append("Scanned    : ").append(numFilesScanned).append(System.lineSeparator());
+        b.append("Filtered   : ").append(numFilesFiltered).append(System.lineSeparator());
         b.append("Copied     : ").append(numFilesCopied).append(System.lineSeparator());
         b.append("Deleted    : ").append(numFilesDeleted).append(System.lineSeparator());
         b.append("Scan Time  : ").append(scanTimeNanos).append(" ns").append(System.lineSeparator());
@@ -105,6 +116,8 @@ public final class SyncResults {
         private int numFilesDeleted = 0;
 
         private int numFilesCopied = 0;
+
+        private int numFilesFiltered = 0;
 
         private long scanTimeNanos = 0L;
 
@@ -146,6 +159,16 @@ public final class SyncResults {
          */
         public SyncResultsBuilder filesCopied(int n) {
             numFilesCopied = n;
+            return this;
+        }
+
+        /**
+         * @param n
+         *            numFilesFiltered
+         * @return SyncResultsBuilder
+         */
+        public SyncResultsBuilder filesFiltered(int n) {
+            numFilesFiltered = n;
             return this;
         }
 
