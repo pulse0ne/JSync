@@ -76,7 +76,7 @@ Filters can be used to include or exclude certain files. Many filters can be add
 ### FileNameSyncFilter
 Filters on a provided GLOB string. Example:
 ```java
-FileNameSyncFilter filter = new FileNameSyncFilter("**/photo0?.jpg");
+SyncFilter filter = new FileNameSyncFilter("**/photo0?.jpg");
 SyncOptions opts = new SyncOptions.SyncOptionsBuilder().addInclusionFilter(filter).build();
 ```
 When the Syncer is run, it will only include jpgs that start with 'photo0'.
@@ -84,7 +84,7 @@ When the Syncer is run, it will only include jpgs that start with 'photo0'.
 ### FileExtensionSyncFilter
 Filters on the provided file extension. Example:
 ```java
-FileExtensionSyncFilter extFilter = new FileExtensionSyncFilter(".exe");
+SyncFilter extFilter = new FileExtensionSyncFilter(".exe");
 SyncOptions opts = new SyncOptions.SyncOptionsBuilder().addExclusionFilter(extFilter).build();
 ```
 When the Syncer is run, it will exclude all .exe files.
@@ -92,7 +92,7 @@ When the Syncer is run, it will exclude all .exe files.
 ### FileSizeSyncFilter
 Filters on the size of the file
 ```java
-FileSizeSyncFilter sizeFilter = new FileSizeSyncFilter(0, 1024 * 1024 * 4);
+SyncFilter sizeFilter = new FileSizeSyncFilter(0, 1024 * 1024 * 4);
 SyncOptions opts = new SyncOptions.SyncOptionsBuilder().addInclusionFilter(sizeFilter).build();
 ```
 When the Syncer is run, it will include files that are sized between 0B and 4MB (inclusive).
@@ -100,7 +100,7 @@ When the Syncer is run, it will include files that are sized between 0B and 4MB 
 ### LastModifiedSyncFilter
 Filters on the last modified time
 ```java
-LastModifiedSyncFilter modFilter = new LastModifiedSyncFilter(638715715000, 1471647337024);
+SyncFilter modFilter = new LastModifiedSyncFilter(638715715000, 1471647337024);
 SyncOptions opts = new SyncOptions.SyncOptionsBuilder().addInclusionFilter(modFilter).build();
 ```
 When run, will include files modified between the date and time of my birth, and the time of this writing
