@@ -270,29 +270,4 @@ public final class Syncer {
             }
         });
     }
-
-    /**
-     * This functional interface describes a callback that will be called with
-     * progress information.
-     * 
-     * @author Tyler Snedigar
-     * @version 1.0
-     */
-    @FunctionalInterface
-    public static interface ProgressCallback {
-        /**
-         * The remaining and total values will be 0 when syncing starts
-         * (important to note that calculations will have a divide by zero
-         * error). They will go to -1 if an error occurs, and the message will
-         * explain the error.
-         * 
-         * @param remaining
-         *            files to be processed
-         * @param total
-         *            files being processed
-         * @param message
-         *            the message
-         */
-        public void call(int remaining, int total, String message);
-    }
 }
