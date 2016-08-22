@@ -25,7 +25,7 @@ public class LastModifiedSyncFilter implements SyncFilter {
      * @param upperBound
      *            the upper bound (inclusive) in ms from epoch
      */
-    protected LastModifiedSyncFilter(long lowerBound, long upperBound) {
+    public LastModifiedSyncFilter(long lowerBound, long upperBound) {
         this.lowerBound = lowerBound;
         this.upperBound = upperBound;
     }
