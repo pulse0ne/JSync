@@ -34,7 +34,11 @@ public final class SyncOptions {
 
     private final boolean deleteUnmatchedTargets;
 
+    private final boolean deleteEmptyTargetDirectories;
+
     private final boolean smartCopy;
+
+    private final boolean preserveModifiedTime;
 
     private final long chunkSize;
 
@@ -49,6 +53,8 @@ public final class SyncOptions {
     // private for builder pattern
     private SyncOptions(SyncOptionsBuilder builder) {
         this.deleteUnmatchedTargets = builder.deleteUnmatchedTargets;
+        this.deleteEmptyTargetDirectories = builder.deleteEmptyTargetDirectories;
+        this.preserveModifiedTime = builder.preserveModifiedTime;
         this.smartCopy = builder.smartCopy;
         this.chunkSize = builder.chunkSize;
         this.inclusionFilters = new ArrayList<>(builder.inclusionFilters);
@@ -68,6 +74,16 @@ public final class SyncOptions {
     }
 
     /**
+     * Returns the option of whether or not to delete empty target directories.
+     * Defaults to true.
+     * 
+     * @return boolean
+     */
+    public boolean isDeleteEmptyTargetDirectories() {
+        return this.deleteEmptyTargetDirectories;
+    }
+
+    /**
      * Returns the option of whether or not smart copy will be used. Defaults to
      * true.
      * 
@@ -75,6 +91,16 @@ public final class SyncOptions {
      */
     public boolean isSmartCopy() {
         return this.smartCopy;
+    }
+
+    /**
+     * Returns the option of whether or not to preserve the modified time.
+     * Defaults to true.
+     * 
+     * @return boolean
+     */
+    public boolean isPreserveModifiedTime() {
+        return this.preserveModifiedTime;
     }
 
     /**
@@ -137,7 +163,11 @@ public final class SyncOptions {
 
         private boolean deleteUnmatchedTargets = true;
 
+        private boolean deleteEmptyTargetDirectories = true;
+
         private boolean smartCopy = true;
+
+        private boolean preserveModifiedTime = true;
 
         private long chunkSize = 1024 * 1024 * 16;
 
@@ -150,7 +180,7 @@ public final class SyncOptions {
         private boolean matchAllExclusionFilters = true;
 
         /**
-         * Sets the delete unmatched targets option. The default is true
+         * Sets the delete unmatched targets option. The default is true.
          * 
          * @param b
          *            unmatched
@@ -158,6 +188,18 @@ public final class SyncOptions {
          */
         public SyncOptionsBuilder deleteUnmatchedTargets(boolean b) {
             this.deleteUnmatchedTargets = b;
+            return this;
+        }
+
+        /**
+         * Sets the delete empty target directories option. The default is true.
+         * 
+         * @param b
+         *            delete
+         * @return SyncOptionsBuilder
+         */
+        public SyncOptionsBuilder deleteEmptyTargetDirectories(boolean b) {
+            this.deleteEmptyTargetDirectories = b;
             return this;
         }
 
@@ -170,6 +212,18 @@ public final class SyncOptions {
          */
         public SyncOptionsBuilder smartCopy(boolean b) {
             this.smartCopy = b;
+            return this;
+        }
+
+        /**
+         * Sets the preserve modified time option. The default is true.
+         * 
+         * @param b
+         *            preserve
+         * @return SyncOptionsBuilder
+         */
+        public SyncOptionsBuilder preserveModifiedTime(boolean b) {
+            this.preserveModifiedTime = b;
             return this;
         }
 

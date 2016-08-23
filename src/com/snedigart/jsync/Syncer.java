@@ -39,13 +39,13 @@ import com.snedigart.jsync.filter.SyncFilter;
  */
 public final class Syncer {
 
+    private static final int TIME_PRECISION = 2000;
+
     private final File source;
 
     private final File target;
 
     private final SyncOptions options;
-
-    private static final int TIME_PRECISION = 2000;
 
     private int totalSourceFiles = 0;
 
@@ -94,6 +94,7 @@ public final class Syncer {
     public SyncResults synchronize(ProgressCallback cb) throws IOException {
         if (cb == null) {
             callback = (c, t, m) -> {
+                // no-op
             };
         } else {
             callback = cb;
@@ -112,6 +113,10 @@ public final class Syncer {
         callback.call(remainingSourceFiles, totalSourceFiles, "Starting synchronize");
         synchronize(source, target);
 
+        if (options.isDeleteEmptyTargetDirectories()) {
+            deleteEmpties(target);
+        }
+
         results.totalTimeNanos(System.nanoTime() - start);
         callback.call(remainingSourceFiles, totalSourceFiles, "Done!");
 
@@ -120,6 +125,7 @@ public final class Syncer {
         return results.build();
     }
 
+    // performs the synchronize recursively
     private void synchronize(File s, File t) throws IOException {
         if (options.getChunkSize() <= 0) {
             throw new IOException("Chunk size must be positive");
@@ -158,18 +164,14 @@ public final class Syncer {
                 long tts = t.lastModified() / TIME_PRECISION;
                 boolean filt = checkFilters(s);
                 if (filt && (!options.isSmartCopy() || sts == 0 || sts != tts || s.length() != t.length())) {
-                    if (remainingSourceFiles > 0) {
-                        callback.call(remainingSourceFiles--, totalSourceFiles, "Copying " + s.getName());
-                    }
+                    callback.call(remainingSourceFiles--, totalSourceFiles, "Copying " + s.getName());
                     copyFile(s, t);
-                } else if (remainingSourceFiles > 0) {
+                } else {
                     callback.call(remainingSourceFiles--, totalSourceFiles, "");
                 }
             } else {
                 if (checkFilters(s)) {
-                    if (remainingSourceFiles > 0) {
-                        callback.call(remainingSourceFiles--, totalSourceFiles, "Copying " + s.getName());
-                    }
+                    callback.call(remainingSourceFiles--, totalSourceFiles, "Copying " + s.getName());
                     copyFile(s, t);
                 } else {
                     callback.call(remainingSourceFiles--, totalSourceFiles, "");
@@ -178,9 +180,9 @@ public final class Syncer {
         }
     }
 
+    // returns true if file needs to be included
     private boolean checkFilters(File f) {
-        boolean incl = matchesFilters(f, options.getInclusionFilters(), options.isMatchAllInclusionFilters());
-        if (!incl) {
+        if (!matchesFilters(f, options.getInclusionFilters(), options.isMatchAllInclusionFilters())) {
             return false;
         } else {
             return options.getExclusionFilters().isEmpty()
@@ -189,6 +191,7 @@ public final class Syncer {
 
     }
 
+    // returns true if file matches a filter
     private boolean matchesFilters(File f, List<SyncFilter> filters, boolean all) {
         boolean rval = true;
         for (SyncFilter filter : filters) {
@@ -203,8 +206,9 @@ public final class Syncer {
         return rval;
     }
 
+    // copies a file
     private void copyFile(File s, File t) throws IOException {
-        // TODO: figure out what to do about symlinks
+        // ignoring symlinks for now
         if (Files.isSymbolicLink(s.toPath())) {
             return;
         }
@@ -226,10 +230,12 @@ public final class Syncer {
             filesCopied++;
         }
 
-        // TODO: options for syncing time?
-        t.setLastModified(s.lastModified());
+        if (options.isPreserveModifiedTime()) {
+            t.setLastModified(s.lastModified());
+        }
     }
 
+    // deletes a file or directory, recursively
     private void delete(File file) throws IOException {
         Path path = file.toPath();
         if (Files.notExists(path)) {
@@ -252,6 +258,24 @@ public final class Syncer {
         });
     }
 
+    private void deleteEmpties(File file) throws IOException {
+        Path path = file.toPath();
+        if (Files.notExists(path)) {
+            return;
+        }
+
+        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                if (dir.toFile().list().length == 0) {
+                    Files.delete(dir);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    // scans the source directory to count files
     private void scanSource() throws IOException {
         Path path = source.toPath();
         if (Files.notExists(path)) {
@@ -261,11 +285,10 @@ public final class Syncer {
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                if (checkFilters(file.toFile())) {
-                    totalSourceFiles++;
-                } else {
+                if (!checkFilters(file.toFile())) {
                     filesFiltered++;
                 }
+                totalSourceFiles++;
                 return FileVisitResult.CONTINUE;
             }
         });

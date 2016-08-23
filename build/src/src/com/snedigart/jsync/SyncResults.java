@@ -13,6 +13,8 @@
  */
 package com.snedigart.jsync;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * The immutable SyncResults object gets returned after a successful sync with
  * statistic about the synchronization
@@ -80,6 +82,13 @@ public final class SyncResults {
     }
 
     /**
+     * @return the copy time
+     */
+    public long getCopyTimeNanos() {
+        return totalTimeNanos - scanTimeNanos;
+    }
+
+    /**
      * @return the totalTimeNanos
      */
     public long getTotalTimeNanos() {
@@ -98,9 +107,44 @@ public final class SyncResults {
         b.append("Filtered   : ").append(numFilesFiltered).append(System.lineSeparator());
         b.append("Copied     : ").append(numFilesCopied).append(System.lineSeparator());
         b.append("Deleted    : ").append(numFilesDeleted).append(System.lineSeparator());
-        b.append("Scan Time  : ").append(scanTimeNanos).append(" ns").append(System.lineSeparator());
-        b.append("Total Time : ").append(totalTimeNanos).append(" ns").append(System.lineSeparator());
+        b.append("Scan Time  : ").append(getTimeString(scanTimeNanos)).append(System.lineSeparator());
+        b.append("Copy Time  : ").append(getTimeString(getCopyTimeNanos())).append(System.lineSeparator());
+        b.append("Total Time : ").append(getTimeString(totalTimeNanos)).append(System.lineSeparator());
         return b.toString();
+    }
+
+    private String getTimeString(long nanos) {
+        long remaining = nanos;
+        long hours = TimeUnit.NANOSECONDS.toHours(remaining);
+        remaining -= TimeUnit.HOURS.toNanos(hours);
+        long mins = TimeUnit.NANOSECONDS.toMinutes(remaining);
+        remaining -= TimeUnit.MINUTES.toNanos(mins);
+        long secs = TimeUnit.NANOSECONDS.toSeconds(remaining);
+        remaining -= TimeUnit.SECONDS.toNanos(secs);
+        long mils = TimeUnit.NANOSECONDS.toMillis(remaining);
+        remaining -= TimeUnit.MILLISECONDS.toNanos(mils);
+        long micr = TimeUnit.NANOSECONDS.toMicros(remaining);
+        remaining -= TimeUnit.MICROSECONDS.toNanos(micr);
+
+        StringBuilder builder = new StringBuilder();
+        if (hours > 0) {
+            builder.append(hours).append("h ");
+        }
+        if (mins > 0) {
+            builder.append(mins).append("m ");
+        }
+        if (secs > 0) {
+            builder.append(secs).append("s ");
+        }
+        if (mils > 0) {
+            builder.append(mils).append("ms ");
+        }
+        if (micr > 0) {
+            builder.append(micr).append("µs ");
+        }
+        builder.append(remaining).append("ns");
+
+        return builder.toString();
     }
 
     /**

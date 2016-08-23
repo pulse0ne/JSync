@@ -34,10 +34,12 @@ total: 2/ remaining: 1/ Copying 2.txt
 total: 2/ remaining: 0/ Done!
 
 Scanned    : 2
+Filtered   : 0
 Copied     : 2
 Deleted    : 0
-Scan Time  : 1234
-Total Time : 12345
+Scan Time  : 186ns
+Copy Time  : 796ns
+Total Time : 982ns
 ```
 ---
 
@@ -50,28 +52,31 @@ Run `ant`
 ### deleteUnmatchedTargets
 Default: true  | If this is set to true, the Syncer will delete any files/directories that it encounters in the target directory that don't exist in the source directory.
 
+### deleteEmptyTargetDirectories
+Default: true  | If this is set to true, the Syncer will delete any empty target directories after the copy has completed.
+
 ### smartCopy
-Default: true | If this is set to true, the Syncer will compare file size and last modified time, and will only perform a copy if they differ. When this is set to false, a copy is always performed.
+Default: true  | If this is set to true, the Syncer will compare file size and last modified time, and will only perform a copy if they differ. When this is set to false, a copy is always performed.
 
 ### chunkSize
-Default: 1024 * 1024 * 16 (16MB) | This specifies the copy buffer size. It is HIGHLY recommended that this value be a power of 2 (1024, 2048, 4096...etc).
+Default: 1024 * 1024 * 16 (16MB)  | This specifies the copy buffer size. It is HIGHLY recommended that this value be a power of 2 (1024, 2048, 4096...etc).
 
 ### inclusionFilters
-Default: empty List | Specifies the filters used for including files in the sync
+Default: empty List  | Specifies the filters used for including files in the sync
 
 ### exclusionFilters
-Default: empty List | Specifies the filters uesd for excluding files from the sync
+Default: empty List  | Specifies the filters used for excluding files from the sync
 
 ### matchAllInclusionFilters
-Default: true | When true, the file must match all provided inclusion filters to be included. When false, the file will be included when any one of the filters matches.
+Default: true  | When true, files must match all provided inclusion filters to be included. When false, files will be included when any one of the filters matches.
 
 ### matchAllExclusionFilters
-Default: true | When true, the file will be excluded only if all exclusion filters are matched. When false, the file will be excluded if any one of the filters matches.
+Default: true  | When true, files will be excluded only if all exclusion filters are matched. When false, files will be excluded if any one of the filters matches.
 
 ---
 
 ## Filters
-Filters can be used to include or exclude certain files. Many filters can be added.
+Filters can be used to include or exclude certain files. Multiple filters can be added.
 
 ### FileNameSyncFilter
 Filters on a provided GLOB string. Example:
@@ -106,6 +111,4 @@ SyncOptions opts = new SyncOptions.SyncOptionsBuilder().addInclusionFilter(modFi
 When run, will include files modified between the date and time of my birth, and the time of this writing
 
 ## Future plans
-- What to do about symlinks
 - More file comparison options
-- Option to update last modified timestamp
